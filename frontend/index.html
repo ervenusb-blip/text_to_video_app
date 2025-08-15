@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Video Generator</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; background: #eef; }
+    .card { max-width:800px; margin:auto; background:#fff; padding:1rem 1.5rem; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+    input, textarea, button { width:100%; padding:10px; margin-top:8px; box-sizing:border-box;}
+    video { display:block; margin-top:12px; max-width:100%; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>AI Video Generator</h1>
+    <label for="prompt">Prompt</label>
+    <textarea id="prompt" rows="3" placeholder="Describe the scene you want (e.g. 'A boy giving milk to a cat')"></textarea>
+
+    <label for="duration">Duration (seconds)</label>
+    <input id="duration" type="number" value="5" min="1" max="20" />
+
+    <button id="generate">Generate Video</button>
+
+    <div id="status" style="margin-top:12px;color:#444"></div>
+    <div id="result" style="margin-top:12px"></div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('generate');
+    const status = document.getElementById('status');
+    const result = document.getElementById('result');
+
+    btn.addEventListener('click', async () => {
+      const prompt = document.getElementById('prompt').value.trim();
+      const duration = Number(document.getElementById('duration').value || 5);
+      if (!prompt) { alert('Please enter a prompt'); return; }
+
+      status.textContent = 'Requesting video... (this can take time)';
+      result.innerHTML = '';
+
+      try {
+        const resp = await fetch('/generate-video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, duration })
+        });
+
+        const data = await resp.json();
+        if (resp.ok && data.videoUrl) {
+          status.textContent = 'Video ready';
+          const v = document.createElement('video');
+          v.controls = true;
+          v.src = data.videoUrl;
+          result.appendChild(v);
+        } else {
+          status.textContent = 'Error: ' + (data.error || 'No video URL returned');
+          console.error('Server response:', data);
+        }
+      } catch (err) {
+        status.textContent = 'Network or server error: ' + err.message;
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
